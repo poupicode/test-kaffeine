@@ -1,0 +1,14 @@
+sequenceDiagram
+    participant Peer A
+    participant Peer B
+
+    Peer A-->>Peer A: new RTCPeerConnection()<br/>pc.createOffer()<br/>pc.setLocalDescription()
+    Note left of Peer A: have-local-offer
+    Peer A->>Peer B: SDP Offer
+    Peer B-->>Peer B: pc.setRemoteDescription()
+    Note right of Peer B: have-remote-offer
+    Peer B-->>Peer B: pc.createAnswer()<br/>pc.setLocalDescription()
+    Note right of Peer B: stable
+    Peer B->>Peer A: SDP Answer
+    Peer A-->>Peer A: pc.setRemoteDescription()
+    Note left of Peer A: stable

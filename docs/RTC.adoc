@@ -1,0 +1,36 @@
+= WebRTC State Diagrams
+:kroki-fetch-diagram: false
+:imagesdir: media
+:showtitlepage:
+:icons: font
+
+== ICE Gathering State
+https://docs.w3cub.com/dom/rtcpeerconnection/icegatheringstate
+
+The read-only property RTCPeerConnection.iceGatheringState returns a string that describes the connection's ICE gathering state. This lets you detect, for example, when collection of ICE candidates has finished.
+
+plantuml::iceGatheringState.plantuml[]
+
+== ICE Connection State
+https://developer.mozilla.org/en-US/docs/Web/API/RTCPeerConnection/iceConnectionState
+
+The read-only property RTCPeerConnection.iceConnectionState returns a string which state of the ICE agent associated with the RTCPeerConnection: `new`, `checking`, `connected`, `completed`, `failed`, `disconnected`, and `closed`.
+
+It describes the current state of the ICE agent and its connection to the ICE server; that is, the STUN or TURN server.
+
+plantuml::iceConnectionState.plantuml[]
+
+== Signaling State
+
+https://developer.mozilla.org/en-US/docs/Web/API/RTCPeerConnection/signalingState
+
+The read-only signalingState property on the RTCPeerConnection interface returns a string value describing the state of the signaling process on the local end of the connection while connecting or reconnecting to another peer. See Signaling in our WebRTC session lifetime page.
+
+WARNING: Need to double-check this diagram, especially sending offers/answers through the signaling channel
+
+plantuml::signalingState.plantuml[]
+
+== Signaling Sequence
+
+mermaid::signalingSequence.mermaid[]
+ 

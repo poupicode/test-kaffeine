@@ -1,0 +1,19 @@
+@startuml iceGatheringState
+
+[*]              --> new: RTCPeerConnection object created
+
+new              -down-> gathering: pc.createOffer() or pc.createAnswer()\nthen pc.setLocalDescription()
+new: The peer connection was just
+new: created and hasn't done any 
+new: networking yet.
+
+gathering        -down-> complete: Gathered all candidates
+gathering: The ICE agent is in the process
+gathering: of gathering candidates for the
+gathering: connection.
+
+complete         -up-> gathering: New interface,\nor new ICE server added:\npc.createOffer() or pc.createAnswer()\nthen pc.setLocalDescription()
+complete: The ICE agent has finished
+complete: gathering candidates.
+
+@enduml

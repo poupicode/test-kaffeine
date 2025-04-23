@@ -1,0 +1,36 @@
+initial,
+"New",
+"Checking",
+"Connected",
+"Completed",
+"Failed",
+"Disconnected",
+"Closed": ICE Agent closed and does not handle requests anymore,
+all,
+final;
+
+initial            => "New": PeerConnection object created;
+
+"New"              => "Checking": pc.setRemoteDescription(description);
+
+"Checking"         => "Connected": ICE check terminé pour au moins une paire par composant??;
+
+"Checking"         => "Completed": ICE check terminé;
+"Connected"        => "Completed": ICE check terminé;
+"Completed"        => "Connected":
+                         pc.restartIce()
+                         pc.addIceCandidate(icecandidate);
+
+"Completed"        => "Disconnected";
+"Disconnected"     => "Completed": liveness check (timeout);
+
+"Checking"         => "Checking": pc.addIceCandidate(icecandidate);
+
+"Checking"         => "Failed": timeout/"comparaison des ICE a échoué"??;
+
+"Failed"           => "New": pc.restartIce();
+
+"Disconnected"     => "Checking": pc.restartIce();
+
+all                => "Closed";
+"Closed"           => final: PeerConnection object deleted;

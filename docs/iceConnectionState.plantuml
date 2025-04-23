@@ -1,0 +1,27 @@
+@startuml iceConnectionState
+
+[*]              --> New: RTCPeerConnection object created
+
+New              -down-> Checking: pc.setRemoteDescription(description)
+
+Checking         --> Connected: ICE check terminé pour au\nmoins une paire de candidats
+
+Checking         --> Completed: ICE check terminé
+Connected        --> Completed: ICE check terminé
+Completed        -up-> Connected: pc.restartIce()\npc.addIceCandidate(icecandidate)
+
+Completed        -left-> Disconnected
+Disconnected     --> Completed: liveness check (timeout)
+
+Checking         -> Checking: pc.addIceCandidate(icecandidate)
+
+Checking         -left-> Failed: timeout/comparaison des ICE a échoué??
+
+Failed           -up-> New: pc.restartIce()
+
+Disconnected     -up-> Checking: pc.restartIce()
+
+all              --> Closed
+Closed           --> [*]: RTCPeerConnection object deleted
+
+@enduml

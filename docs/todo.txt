@@ -1,0 +1,50 @@
+
+# Switch to Presence instead of broadcast
+# Broadcast does not guarantee that the remote peer is connected and will receive the messages
+# Presence is persistant. We need to store data there, and find a way to tell when the data was read so it is not read twice.
+# This will looks like the original db system, with persistant storage of the iceCandidate...
+
+########## Bruno
+# Bonne idée ou pas ?
+# Pas fan de rebasculer sur un système persistant
+
+# Je dirais que c'est une assez bonne idée, je regarde un peu la doc de présence et il seblerait
+# qu'on puisse listen sur les joins et les déconnections. Pour ce qui est de la persistance
+# j'avoue que je ne sais pas trop quoi en penser...
+
+# on va se retrouver dans la meme situation qu'avec la BDD Postgres, et la table de IceCandidates
+# les messages non-persistants, c'est le top, mais il nous faut trouver un mécanisme permettant de
+# s'assurer que le remote peer peut bien recevoir les messages...
+
+# Continue de creuser persistance, je vais revoir un peu ce qu'on peut faire avec les messages en parallele
+
+# ok
+# on peut peut-être utiliser présence pour écouter ceux qui rejoignent un channel, ce qui voudrait dire qu'au moins une
+# partie de la connexion a été établie, et à ce moment la on peut essayer d'envoyer le reste des messages ?
+# peut être que ça éviterait d'envoyer des messages dans le vide sans pour autant passer sur du 100% persistant ?
+https://supabase.com/docs/guides/realtime/presence
+
+# Oui, exactement ce que j'ai en tête
+# Je regarde si j'arrive à détecter facilement ce type de connexion au channel
+
+# Durant mon repas je me suis également demandé si le rate limiting ne sera pas problématique malgré tout,
+# on va envoyer nos candidats une fois connecté, mais le nombre de messages reste limité
+# et je pense qu'en fait on envoie que quelques candidats mais pas forcément les bons.
+# Je veux dire par la que sur les 20 et quelques on en envoie 3, et si les 3 sont de type host c'est normal
+# que ça ne fonctionne pas..
+
+const channel = supabase.channel('test')
+
+channel
+  .on('presence', { event: 'join' }, ({ key, newPresences }) => {
+    console.log(key, newPresences)
+    // et ici comme on sait que quelqu'un a rejoint on envoie les autres messages ?
+  })
+  .subscribe()
+
+[ ] Setup a Presence channel? Or is it already implemented with the current channel?
+[ ] Change broadcast signals to presence updates
+[ ] Detect when the signaling channel is ready (local peer AND remote peer connected)
+[ ] Handle deco/reco
+
+

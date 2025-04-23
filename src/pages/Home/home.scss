@@ -1,0 +1,15 @@
+#home {
+    height: 90vh;
+
+    > .row {
+        margin-top: 5vh;
+
+        > .col {
+            text-align: center;
+        }
+    }
+}
+
+#website-description {
+    text-align: left!important;
+}

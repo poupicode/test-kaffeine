@@ -1,0 +1,114 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<!-- Created with Inkscape (http://www.inkscape.org/) -->
+
+<svg
+   width="85mm"
+   height="85mm"
+   viewBox="0 0 321.25986 321.25983"
+   version="1.1"
+   id="svg5"
+   inkscape:version="1.2.1 (9c6d41e410, 2022-07-14)"
+   sodipodi:docname="EKAMI Logomark #D10C2E.svg"
+   xmlns:inkscape="http://www.inkscape.org/namespaces/inkscape"
+   xmlns:sodipodi="http://sodipodi.sourceforge.net/DTD/sodipodi-0.dtd"
+   xmlns="http://www.w3.org/2000/svg"
+   xmlns:svg="http://www.w3.org/2000/svg">
+  <sodipodi:namedview
+     id="namedview7"
+     pagecolor="#ffffff"
+     bordercolor="#000000"
+     borderopacity="0.25"
+     inkscape:showpageshadow="2"
+     inkscape:pageopacity="0.0"
+     inkscape:pagecheckerboard="0"
+     inkscape:deskcolor="#d1d1d1"
+     inkscape:document-units="mm"
+     showgrid="false"
+     inkscape:zoom="1"
+     inkscape:cx="-46.5"
+     inkscape:cy="248.5"
+     inkscape:window-width="1440"
+     inkscape:window-height="890"
+     inkscape:window-x="-6"
+     inkscape:window-y="-6"
+     inkscape:window-maximized="1"
+     inkscape:current-layer="g1291" />
+  <defs
+     id="defs2">
+    <rect
+       x="361.13705"
+       y="223.72881"
+       width="214.92059"
+       height="213.15895"
+       id="rect950" />
+    <rect
+       x="242.22607"
+       y="112.74523"
+       width="265.12744"
+       height="104.81783"
+       id="rect511" />
+    <clipPath
+       clipPathUnits="userSpaceOnUse"
+       id="clipPath26011">
+      <path
+         d="M 0,556.757 H 612 V 0 H 0 Z"
+         id="path26009" />
+    </clipPath>
+    <clipPath
+       clipPathUnits="userSpaceOnUse"
+       id="clipPath26011-3">
+      <path
+         d="M 0,556.757 H 612 V 0 H 0 Z"
+         id="path26009-2" />
+    </clipPath>
+    <clipPath
+       clipPathUnits="userSpaceOnUse"
+       id="clipPath26011-1">
+      <path
+         d="M 0,556.757 H 612 V 0 H 0 Z"
+         id="path26009-5" />
+    </clipPath>
+    <clipPath
+       clipPathUnits="userSpaceOnUse"
+       id="clipPath26011-37">
+      <path
+         d="M 0,556.757 H 612 V 0 H 0 Z"
+         id="path26009-4" />
+    </clipPath>
+  </defs>
+  <g
+     inkscape:label="Layer 1"
+     inkscape:groupmode="layer"
+     id="layer1">
+    <g
+       id="g1291"
+       transform="matrix(1.8224762,0,0,1.8224762,-8.3630968,-45.32358)"
+       style="display:inline"
+       inkscape:label="Logomark EKAMI">
+      <g
+         id="g2831"
+         inkscape:label="E">
+        <path
+           d="m 0,0 14.363,-14.363 126.869,126.868 -14.364,14.363 z"
+           style="display:inline;fill:#d10c2e;fill-opacity:1;fill-rule:nonzero;stroke:none"
+           id="path25999"
+           transform="matrix(0.4655469,0,0,-0.4655469,33.200408,112.54411)"
+           sodipodi:nodetypes="ccccc"
+           inkscape:label="E top" />
+        <path
+           d="M 0,0 126.868,126.868 112.505,141.232 1.299,30.026 -44.055,75.379 62.482,181.915 48.118,196.279 -74.067314,74.067314 Z"
+           style="display:inline;fill:#1c1c1c;fill-opacity:1;fill-rule:nonzero;stroke:none"
+           id="path26003"
+           transform="matrix(0.4655469,0,0,-0.4655469,93.190638,172.53435)"
+           sodipodi:nodetypes="ccccccccc"
+           inkscape:label="E bottom" />
+      </g>
+      <path
+         d="m 0,0 c -84.093,0 -152.504,-68.411 -152.504,-152.504 0,-84.093 68.411,-152.503 152.504,-152.503 84.093,0 152.504,68.41 152.504,152.503 C 152.504,-68.411 84.093,0 0,0 m 0,-314.465 c -89.307,0 -161.961,72.655 -161.961,161.961 0,89.307 72.654,161.962 161.961,161.962 89.302,0 161.961,-72.655 161.961,-161.962 0,-89.306 -72.659,-161.961 -161.961,-161.961"
+         style="display:inline;fill:#1c1c1c;fill-opacity:1;fill-rule:nonzero;stroke:none"
+         id="path26015"
+         transform="matrix(0.4655469,0,0,-0.4655469,92.727143,42.009982)"
+         inkscape:label="Circle" />
+    </g>
+  </g>
+</svg>

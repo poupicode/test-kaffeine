@@ -1,0 +1,60 @@
+@startuml signalingState
+hide empty description
+left to right direction
+
+state stable
+stable: No ongoing exchange of offer
+stable: and answer is underway.
+
+state "Local peer signaling" as local {
+    state "have-local-offer" as havelocaloffer
+    havelocaloffer: The local peer has called
+    havelocaloffer: pc.setLocalDescription() successfully.
+
+    state "have-remote-pranswer" as haveremotepranswer
+    haveremotepranswer: Provisional answer received and successfully
+    haveremotepranswer: applied. pc.setLocalDescription().
+}
+
+state "Remote peer signaling" as remote {
+    state "have-remote-offer" as haveremoteoffer
+    haveremoteoffer: The remote peer has delivered an offer, which
+    haveremoteoffer: the local peer set as the remote description.
+    haveremoteoffer: pc.setRemoteDescription()
+
+    state "have-local-pranswer" as havelocalpranswer
+    havelocalpranswer: Offer sent by remote peer has been applied 
+    havelocalpranswer: and an answer has been created (pc.createAnswer())
+    havelocalpranswer: and applied.  pc.setLocalDescription().
+    havelocalpranswer: Further ICE candidates will be delivered separately later.
+}
+
+closed: RTCPeerConnection has been closed.
+
+stable -[hidden]left-> local
+stable -[hidden]right-> remote
+stable -[hidden]right-> closed
+
+havelocaloffer -[dotted]> haveremoteoffer: Offer sent to peer through server signaling
+
+stable              -up-> havelocaloffer: pc.setLocalDescription(offer)
+stable              -down-> haveremoteoffer: pc.setLocalDescription(offer)
+
+
+havelocaloffer      --> havelocaloffer: \n\n\n\npc.setLocalDescription(offer)
+
+havelocaloffer      -> haveremotepranswer: pc.setRemoteDescription(PRanswer)
+haveremotepranswer  --> haveremotepranswer: pc.setRemoteDescription(PRanswer)
+
+haveremotepranswer  -right-> stable: pc.setRemoteDescription(answer)
+havelocaloffer      -right-> stable: pc.setRemoteDescription(answer)
+
+
+haveremoteoffer     --> haveremoteoffer: \n\n\n\npc.setLocalDescription(offer)
+
+haveremoteoffer     -> havelocalpranswer: pc.setRemoteDescription(PRanswer)
+havelocalpranswer   --> havelocalpranswer: pc.setRemoteDescription(PRanswer)
+
+havelocalpranswer   -left-> stable: pc.setRemoteDescription(answer)
+haveremoteoffer     -left-> stable: pc.setRemoteDescription(answer)
+@enduml
