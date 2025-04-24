@@ -20,6 +20,7 @@ export default class SignalingSupabase {
   private userName: string;
 
   private roomId: string = "";
+  private pendingCandidates: RTCIceCandidate[] = [];
 
   // Perfect Negotiation
   private makingOffer: boolean = false;
@@ -299,9 +300,28 @@ const ignoreOffer   = !polite && offerCollision;
           return;
         }
 
-       this.isSettingRemoteAnswerPending = description.type === "answer";
+        this.isSettingRemoteAnswerPending = description.type === "answer";
+
+        // Prevent setting remote answer if the peer connection is already stable
+        if (description.type === "answer" && signalingState === "stable") {
+          console.warn("Skipping setRemoteDescription: already in stable state and received answer.");
+          return;
+        }
+
         try {
           await this.setRemoteDescriptionCallback(description);// SRD rolls back as needed
+          // Apply pending ICE candidates now that remote description is set
+          if (this.pendingCandidates.length > 0) {
+            console.debug("Applying queued ICE candidates");
+            for (const candidate of this.pendingCandidates) {
+              try {
+                await this.addIceCandidateCallback(candidate);
+              } catch (e) {
+                console.error("Failed to apply pending ICE candidate", e);
+              }
+            }
+            this.pendingCandidates = [];
+          }
         } catch (err) {
           console.error("Error setting remote description :", err);
           this.resetPeerConnectionCallback();
@@ -321,18 +341,22 @@ const ignoreOffer   = !polite && offerCollision;
         }
 
       } else if (candidate) {
-        console.debug("Received candidate through realtime channel");
-        // // If the signaling state is not stable, ignore the candidate
-        // if (this.getPeerConnectionSignalingStateCallback() !== "stable"){
-        //     console.error("PeerConnection is not stable, cannot send candidate to the other peer", candidate);
-        //     return;
-        // }
+        console.debug("Received ICE candidate through realtime channel");
 
-        // add the candidate to the peer connection;
+        // Check if the peer connection is ready to accept candidates
+        const state = this.getPeerConnectionSignalingStateCallback();
+
+        // If remote description is not yet set, queue the candidate
+        if (state !== "have-remote-offer" && state !== "have-local-offer" && state !== "stable") {
+          console.warn("Remote description not set yet, queuing ICE candidate");
+          this.pendingCandidates.push(candidate);
+          return;
+        }
+
+        // If it's safe, add the candidate immediately
         try {
           await this.addIceCandidateCallback(candidate);
         } catch (e) {
-          //console.error("Error adding candidate to the peer connection", candidate);
           if (!this.ignoreOffer) throw e;
         }
       }

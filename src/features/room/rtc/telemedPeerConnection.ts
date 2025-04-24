@@ -293,38 +293,48 @@ export default class TelemedPeerConnection {
     }
 
     public setupStreamsAndTransceivers = (peerConnection: RTCPeerConnection ) => {
-        console.debug("Setting up dummy streams and transceivers");
-        // Create one empty stream per device found in DEFAULT_TRANSCEIVERS
-        // MediaStreams are used to group and identify tracks sent to the peerConnection
-        for (const { device } of DEFAULT_TRANSCEIVERS) {
-            if (!this._localStreams[device])
-                this._localStreams[device] = new MediaStream();
-            if (!this._remoteStreams[device])
-                this._remoteStreams[device] = new MediaStream();
+        console.debug("Setting up fixed streams and transceivers");
+      
+        // Ensure all peers use the same order of transceivers
+        // This is critical to avoid SDP negotiation errors ("m-lines" mismatch)
+        const orderedTransceivers: { device: keyof StreamsByDevice, kind: "audio" | "video" }[] = [
+          { device: "camera", kind: "audio" },
+          { device: "camera", kind: "video" },
+          { device: "instrument", kind: "video" },
+          { device: "screen", kind: "video" }
+        ];
+      
+        // Create placeholder MediaStreams for each device
+        // These are used to group and identify tracks before real streams are attached
+        for (const { device } of orderedTransceivers) {
+          if (!this._localStreams[device]) this._localStreams[device] = new MediaStream();
+          if (!this._remoteStreams[device]) this._remoteStreams[device] = new MediaStream();
         }
-
+      
         console.debug("TelemedPeerConnection: Placeholder MediaStreams created for each device");
-        console.debug(this._localStreams, this._remoteStreams)
-
-        // Add transceivers to the peer connection, for future tracks
-        for (const { device, kind } of DEFAULT_TRANSCEIVERS) {
-            // Create Transceiver and add it to the peer connection
-            const rtcRtpTransceiver = peerConnection.addTransceiver(kind, { streams: [this._localStreams[device]] });
-
-            if (!rtcRtpTransceiver) {
-                console.error("Error creating transceiver", device, kind, this._localStreams[device]);
-                throw new Error("Error creating transceiver for device");
-            }
-            // Store Transceiver locally (to enable the usage of replaceTrack later)
-            if (!this.rtcRtpSenders[device])
-                this.rtcRtpSenders[device] = {}
-
-            this.rtcRtpSenders[device][kind] = rtcRtpTransceiver.sender;
+        console.debug(this._localStreams, this._remoteStreams);
+      
+        // Add one transceiver per track type, in a fixed and synchronized order
+        // Each transceiver is bound to its corresponding placeholder stream
+        for (const { device, kind } of orderedTransceivers) {
+          const rtcRtpTransceiver = peerConnection.addTransceiver(kind, {
+            direction: "sendrecv",
+            streams: [this._localStreams[device]]
+          });
+      
+          if (!rtcRtpTransceiver) {
+            console.error("Error creating transceiver", device, kind);
+            throw new Error("Error creating transceiver for device");
+          }
+      
+          // Store transceiver sender for future track replacement (e.g. replaceTrack)
+          if (!this.rtcRtpSenders[device]) this.rtcRtpSenders[device] = {};
+          this.rtcRtpSenders[device][kind] = rtcRtpTransceiver.sender;
         }
-
-        console.debug("TelemedPeerConnection: Transceivers (senders) created for each device and kind");
-        console.debug(this.rtcRtpSenders)
-    }
+      
+        console.debug("TelemedPeerConnection: Transceivers (senders) created in fixed order");
+        console.debug(this.rtcRtpSenders);
+    };
 
 
     // This function will be called when we receives an answer
