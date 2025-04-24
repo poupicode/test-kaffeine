@@ -118,10 +118,10 @@ export default class SignalingSupabase {
     this.channel
       .on("presence", { event: "sync" }, () => this.onPresenceChanged())
       .on("presence", { event: "join" }, ({ key, newPresences }) => {
-        console.error("New clients joined channel: ", key, newPresences);
+        console.info("New clients joined channel: ", key, newPresences);
       })
       .on("presence", { event: "leave" }, ({ key, leftPresences }) => {
-        console.error("Clients left channel: ", key, leftPresences);
+        console.info("Clients left channel: ", key, leftPresences);
         //this.resetPeerConnectionCallback();
       })
       .on("broadcast", { event: "message" }, (event) => {
@@ -145,7 +145,7 @@ export default class SignalingSupabase {
               userKind: this.userKind,
               online_at: new Date().toISOString(),
             });
-            console.error(`presenceTrackStatus = ${presenceTrackStatus}`);
+            console.debug(`presenceTrackStatus = ${presenceTrackStatus}`);
 
           } while ((presenceTrackStatus === "rate limited" || presenceTrackStatus === "timed out") && ttl-- > 0);
           //console.debug(`presenceTrackStatus = ${presenceTrackStatus}`)

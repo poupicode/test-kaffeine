@@ -42,26 +42,31 @@ export function VideoThumbnail(props: VideoThumbnailProps) {
   }, [mediaStreams, videoProps.streamid])
 
 
-  useEffect(() => {
-    // function setStream() {
-    if (videoElementRef.current && videoProps.streamid) {
-      console.debug(`VideoThumbnail, streamId: ${videoProps.streamid}`);
+useEffect(() => {
+  if (videoElementRef.current && videoProps.streamid) {
+    console.debug(`VideoThumbnail, streamId: ${videoProps.streamid}`);
 
-      let newStream: MediaStream | null;
+    // Try to retrieve the stream from the MediaStreamsContext
+    const newStream = mediaStreams[videoProps.streamid];
 
-      newStream = mediaStreams[videoProps.streamid];
-
+    if (newStream) {
+      // If the stream exists, assign it to the video element
       videoElementRef.current.srcObject = newStream;
 
-      // If there is no selected stream, set it
-      // DIRTY, NEED TO FIND ANOTHER WAY TO DO THIS
-      if (!selectedStream && newStream) dispatch(selectedStreamUpdated(newStream.id));
-
+      // If there is no selected stream yet, set it
+      if (!selectedStream) {
+        dispatch(selectedStreamUpdated(newStream.id));
+      }
     } else {
-      console.error("VideoThumbnail, cannot set stream");
+      // Stream is not available in the context
+      console.debug(`VideoThumbnail: No stream found for streamId ${videoProps.streamid}`);
     }
-  // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [videoProps.streamid]);
+
+  } else {
+    // Either the video element is not ready or streamid is missing
+    console.debug("VideoThumbnail: video element not ready or streamId is missing");
+  }
+}, [videoProps.streamid, mediaStreams, selectedStream, dispatch]);
 
   function handleClick() {
     if (videoElementRef.current && videoProps.streamid) {
