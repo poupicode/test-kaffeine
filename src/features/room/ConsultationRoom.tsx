@@ -271,19 +271,56 @@ export function ConsultationRoom() {
   // Automatically joins the room when the roomId is updated
   useEffect(() => {
     console.debug(`New roomId detected: ${roomId}`);
-    if (roomId) {
-      joinRoom(
-        telemedPC,
-        signaling,
-        roomId,
-        iceConfig,
-        user,
-        addMediaStreams,
-        localStreams,
-        mediaStreams
-      );
+  
+    async function handleRoomChange() {
+      console.debug("Handling Room Change");
+  
+      // Close old PeerConnection if exists
+      if (telemedPC.current) {
+        console.debug("Closing old PeerConnection");
+        try {
+          telemedPC.current.closeConnection();
+        } catch (e) {
+          console.error("Error closing PeerConnection", e);
+        }
+        telemedPC.current = undefined;
+      }
+  
+      // Close old signaling channel if exists
+      if (signaling.current) {
+        console.debug("Closing old SignalingSupabase channel");
+        try {
+          signaling.current.removeAllChannels();
+        } catch (e) {
+          console.error("Error removing Supabase channels", e);
+        }
+        signaling.current = undefined;
+      }
+  
+      // Clear RoomSupabase if needed
+      if (room.current) {
+        console.debug("Clearing RoomSupabase reference");
+        room.current = undefined;
+      }
+  
+      // Now join new room
+      if (roomId) {
+        console.debug("Joining new room", roomId);
+        await joinRoom(
+          telemedPC,
+          signaling,
+          roomId,
+          iceConfig,
+          user,
+          addMediaStreams,
+          localStreams,
+          mediaStreams
+        );
+      }
     }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
+  
+    handleRoomChange();
+  
   }, [roomId]);
 
   // Detects changes to messages and send them to the peer connection if
@@ -345,8 +382,12 @@ export function ConsultationRoom() {
   // Check state of the peer connection
   useEffect(() => {
     if (
-      connectionState === ("disconnected" || "failed" || "closed") ||
-      iceConnectionState === ("disconnected" || "failed" || "closed")
+      connectionState === "disconnected" ||
+      connectionState === "failed" ||
+      connectionState === "closed" ||
+      iceConnectionState === "disconnected" ||
+      iceConnectionState === "failed" ||
+      iceConnectionState === "closed"
     ) {
       // signaling.current?.removeAllChannels();
       // peerConnection.current?.resetPeerConnection();

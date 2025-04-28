@@ -273,6 +273,18 @@ export default class TelemedPeerConnection {
         this.setupPeerConnection(this.iceConfiguration, this.onDataChannelMessageCallback);
     }
 
+    public closeConnection() {
+        console.debug("Closing TelemedPeerConnection");
+        if (this.peerConnection) {
+          try {
+            this.peerConnection.close();
+            console.debug("PeerConnection closed successfully");
+          } catch (e) {
+            console.error("Error while closing PeerConnection", e);
+          }
+        }
+      }
+
     public replaceDeviceStream = (stream: MediaStream, device: keyof StreamsByDevice) => {
         if (!this.rtcRtpSenders[device]) {
             console.error("No RTCRtpSender found for device", device);
