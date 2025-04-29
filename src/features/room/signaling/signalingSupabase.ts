@@ -97,17 +97,17 @@ export default class SignalingSupabase {
   public getPeerConnectionSignalingStateCallback: () =>
     | RTCSignalingState
     | undefined = () => {
-    throw new Error("getPeerConnectionSignalingStateCallback not set");
-  };
+      throw new Error("getPeerConnectionSignalingStateCallback not set");
+    };
 
   private rtChannelOptions: RealtimeChannelOptions = {
     config: {
       broadcast: { self: false, ack: true },
     },
   };
-  
+
   // Set the broadcast channel (when joining an existing room) with the room ID as the channel name
-  private setupChannel = (ttl : number = RT_DEFAULT_RETRY_COUNT): void => {
+  private setupChannel = (ttl: number = RT_DEFAULT_RETRY_COUNT): void => {
     this.channel = this.supabaseClient.channel(
       `room:${this.roomId}`,
       this.rtChannelOptions
@@ -135,7 +135,7 @@ export default class SignalingSupabase {
         console.debug(`Channel subscription status: ${status}`);
         if (status === "SUBSCRIBED") {
           // const presenceTrackStatus = await this.channel?.track({
-          let presenceTrackStatus : string | undefined = "rate limited";
+          let presenceTrackStatus: string | undefined = "rate limited";
           // While the presenceTrackStatus is rate limited, we do the channel track again with a delay of 1 second to make sure the channel is tracked
           do {
             await new Promise((r) => setTimeout(r, 1000));
@@ -158,6 +158,12 @@ export default class SignalingSupabase {
   public removeAllChannels = () => {
     this.supabaseClient.removeAllChannels();
   };
+
+  // Public getter to access the channel state
+  public getChannelState(): string | undefined {
+    return this.channel?.state;
+  }
+
 
   // Checks how many peers are connected to the room
   // Setups the peer connection if 2 peers are connected
@@ -278,7 +284,7 @@ export default class SignalingSupabase {
         // --- Mozilla approach ---
         const offerCollision = description.type === "offer" && (this.makingOffer || signalingState !== "stable");
         this.ignoreOffer = !this.polite && offerCollision;
-        
+
         // RECONNECTION WORKING BY SENDING ANSWER WITHOUT CHECKING FOR OFFER COLLISION. SHOULD BE FIXED.
         // If the type is offer, we create an answer and send it back
 
@@ -327,7 +333,7 @@ const ignoreOffer   = !polite && offerCollision;
           this.resetPeerConnectionCallback();
           await this.setRemoteDescriptionCallback(description);// SRD rolls back as needed
         }
-         
+
         this.isSettingRemoteAnswerPending = false;
 
         if (description.type === "offer") {
