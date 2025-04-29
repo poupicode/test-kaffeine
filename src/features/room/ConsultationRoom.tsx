@@ -297,8 +297,11 @@ export function ConsultationRoom() {
     console.debug(`New roomId detected: ${roomId}`);
   
     async function handleRoomChange() {
-      console.debug("Handling Room Change");
-  
+      console.debug("---- handleRoomChange START ----");
+    
+      console.debug("Current telemedPC:", telemedPC.current);
+      console.debug("Current signaling:", signaling.current);
+    
       if (telemedPC.current) {
         console.debug("Closing old PeerConnection");
         try {
@@ -308,7 +311,7 @@ export function ConsultationRoom() {
         }
         telemedPC.current = undefined;
       }
-  
+    
       if (signaling.current) {
         console.debug("Closing old SignalingSupabase channel");
         try {
@@ -318,30 +321,41 @@ export function ConsultationRoom() {
         }
         signaling.current = undefined;
       }
-  
+    
       if (room.current) {
         console.debug("Clearing RoomSupabase reference");
         room.current = undefined;
       }
-  
+    
+      console.debug("After cleaning:");
+      console.debug("telemedPC.current:", telemedPC.current);
+      console.debug("signaling.current:", signaling.current);
+      console.debug("room.current:", room.current);
+    
       if (roomId) {
-        console.debug("Joining new room", roomId);
-  
-        // ⬇️ AJOUTE CES 2 LIGNES
+        console.debug("Joining new room:", roomId);
+    
         await dispatch(getLatestIceConfig());
         const latestIceConfig = store.getState().iceConfig.iceConfig;
-  
+        console.debug("Using ICE Config:", latestIceConfig);
+    
         await joinRoom(
           telemedPC,
           signaling,
           roomId,
-          latestIceConfig, // ⬅️ ICI tu utilises latestIceConfig et plus iceConfig
+          latestIceConfig,
           user,
           addMediaStreams,
           localStreams,
           mediaStreams
         );
+    
+        console.debug("JoinRoom finished");
+      } else {
+        console.warn("No roomId to join!");
       }
+    
+      console.debug("---- handleRoomChange END ----");
     }
   
     handleRoomChange();

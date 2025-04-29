@@ -55,6 +55,7 @@ export default class SignalingSupabase {
     );
   }
 
+
   // Callbacks for working with the peer connection
   // Sets the remote description
   public setRemoteDescriptionCallback: (
@@ -107,14 +108,16 @@ export default class SignalingSupabase {
   };
 
   // Set the broadcast channel (when joining an existing room) with the room ID as the channel name
-  private setupChannel = (ttl: number = RT_DEFAULT_RETRY_COUNT): void => {
+  // Setup the Realtime Channel for signaling
+  private setupChannel = async (ttl: number = RT_DEFAULT_RETRY_COUNT): Promise<void> => {
+
+    // Create a new channel for this room
     this.channel = this.supabaseClient.channel(
       `room:${this.roomId}`,
       this.rtChannelOptions
     );
 
-    // MONITORING CHANNEL
-    // State change
+    // Monitor presence and broadcast events on the channel
     this.channel
       .on("presence", { event: "sync" }, () => this.onPresenceChanged())
       .on("presence", { event: "join" }, ({ key, newPresences }) => {
@@ -122,7 +125,6 @@ export default class SignalingSupabase {
       })
       .on("presence", { event: "leave" }, ({ key, leftPresences }) => {
         console.info("Clients left channel: ", key, leftPresences);
-        //this.resetPeerConnectionCallback();
       })
       .on("broadcast", { event: "message" }, (event) => {
         this.onBroadcastMessage(
@@ -130,13 +132,13 @@ export default class SignalingSupabase {
           event.payload.candidate
         );
       })
-
       .subscribe(async (status, err) => {
         console.debug(`Channel subscription status: ${status}`);
         if (status === "SUBSCRIBED") {
-          // const presenceTrackStatus = await this.channel?.track({
+          // Start tracking presence once the channel is subscribed
           let presenceTrackStatus: string | undefined = "rate limited";
-          // While the presenceTrackStatus is rate limited, we do the channel track again with a delay of 1 second to make sure the channel is tracked
+
+          // If tracking is limited, retry automatically after a delay
           do {
             await new Promise((r) => setTimeout(r, 1000));
             presenceTrackStatus = await this.channel?.track({
@@ -146,14 +148,14 @@ export default class SignalingSupabase {
               online_at: new Date().toISOString(),
             });
             console.debug(`presenceTrackStatus = ${presenceTrackStatus}`);
-
           } while ((presenceTrackStatus === "rate limited" || presenceTrackStatus === "timed out") && ttl-- > 0);
-          //console.debug(`presenceTrackStatus = ${presenceTrackStatus}`)
         } else {
+          // Log error if subscription fails
           console.error(`Channel subscription failed with error: `, err);
         }
       });
   };
+
 
   public removeAllChannels = () => {
     this.supabaseClient.removeAllChannels();
