@@ -1,9 +1,6 @@
 // React, Supabase, Types
 import { useEffect, useRef } from "react";
-
-import { createNewSupabaseClient } from "app/supabaseClient";
-let supabase = createNewSupabaseClient();
-
+import { supabase } from "app/supabaseClient";
 import { MediaStreamList, User } from "app/types";
 
 // Redux
@@ -147,7 +144,7 @@ async function joinRoom(
       telemedPC.current,
       mediaStreams
     );
-
+    
     addStreamsToStore(telemedPC.current, addMediaStreams);
     // // Getting all the remote streams from the peerConnection
     // const remoteStreams = telemedPC.current.remoteStreams;
@@ -168,9 +165,7 @@ async function joinRoom(
     //   );
     // }
 
-    console.warn("Always recreating Supabase client before signaling...");
-    supabase = createNewSupabaseClient();
-
+    // Create a new signaling class
     signaling.current = new SignalingSupabase(supabase, user, roomId);
 
     // registerPeerConnectionListeners();
@@ -201,7 +196,7 @@ async function joinRoom(
   }
 }
 
-function addStreamsToStore(telemedPC: TelemedPeerConnection, addMediaStreams: (streams: MediaStreamList) => void) {
+function addStreamsToStore(telemedPC : TelemedPeerConnection, addMediaStreams: (streams: MediaStreamList) => void) {
   // Getting all the remote streams from the peerConnection
   const remoteStreams = telemedPC.remoteStreams;
 
@@ -300,13 +295,13 @@ export function ConsultationRoom() {
   // Automatically joins the room when the roomId is updated
   useEffect(() => {
     console.debug(`New roomId detected: ${roomId}`);
-
+  
     async function handleRoomChange() {
       console.debug("---- handleRoomChange START ----");
-
+    
       console.debug("Current telemedPC:", telemedPC.current);
       console.debug("Current signaling:", signaling.current);
-
+    
       if (telemedPC.current) {
         console.debug("Closing old PeerConnection");
         try {
@@ -316,7 +311,7 @@ export function ConsultationRoom() {
         }
         telemedPC.current = undefined;
       }
-
+    
       if (signaling.current) {
         console.debug("Closing old SignalingSupabase channel");
         try {
@@ -326,24 +321,24 @@ export function ConsultationRoom() {
         }
         signaling.current = undefined;
       }
-
+    
       if (room.current) {
         console.debug("Clearing RoomSupabase reference");
         room.current = undefined;
       }
-
+    
       console.debug("After cleaning:");
       console.debug("telemedPC.current:", telemedPC.current);
       console.debug("signaling.current:", signaling.current);
       console.debug("room.current:", room.current);
-
+    
       if (roomId) {
         console.debug("Joining new room:", roomId);
-
+    
         await dispatch(getLatestIceConfig());
         const latestIceConfig = store.getState().iceConfig.iceConfig;
         console.debug("Using ICE Config:", latestIceConfig);
-
+    
         await joinRoom(
           telemedPC,
           signaling,
@@ -354,17 +349,17 @@ export function ConsultationRoom() {
           localStreams,
           mediaStreams
         );
-
+    
         console.debug("JoinRoom finished");
       } else {
         console.warn("No roomId to join!");
       }
-
+    
       console.debug("---- handleRoomChange END ----");
     }
-
+  
     handleRoomChange();
-
+  
   }, [roomId]);
 
   // Detects changes to messages and send them to the peer connection if
@@ -427,20 +422,20 @@ export function ConsultationRoom() {
   useEffect(() => {
     async function handleDisconnection() {
       console.warn("Detected disconnection in PeerConnection or ICE state.");
-
+  
       if (!signaling.current) {
         console.error("Signaling object not available, cannot reconnect.");
         return;
       }
-
+  
       // Check if the Supabase Channel is still alive
       const channelState = signaling.current.getChannelState();
-
+  
       console.debug("Supabase channel state:", channelState);
-
+  
       if (channelState !== "joined") {
         console.warn("Supabase channel is not joined, resetting everything.");
-
+  
         // Close peer + signaling if still open
         if (telemedPC.current) {
           try {
@@ -450,7 +445,7 @@ export function ConsultationRoom() {
           }
           telemedPC.current = undefined;
         }
-
+  
         if (signaling.current) {
           try {
             signaling.current.removeAllChannels();
@@ -459,11 +454,11 @@ export function ConsultationRoom() {
           }
           signaling.current = undefined;
         }
-
+  
         // Re-fetch ICE config (optional, safer)
         await dispatch(getLatestIceConfig());
         const latestIceConfig = store.getState().iceConfig.iceConfig;
-
+  
         // Re-join the room
         await joinRoom(
           telemedPC,
@@ -477,12 +472,12 @@ export function ConsultationRoom() {
         );
       } else {
         console.info("Supabase signaling channel still alive, only PeerConnection needs renegotiation.");
-
+  
         // TODO: Optionally: Try to renegotiate without resetting everything
         // (Avancé : pas obligatoire maintenant)
       }
     }
-
+  
     if (
       connectionState === "disconnected" ||
       connectionState === "failed" ||
