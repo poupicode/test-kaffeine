@@ -13,7 +13,7 @@ const DEFAULT_TRANSCEIVERS: { device: keyof StreamsByDevice, kind: "audio" | "vi
 // Datachannel options
 const DATA_CHANNEL_OPTIONS: RTCDataChannelInit = {
     ordered: true,              // guarantee order of messages
-//    maxPacketLifeTime: 1500,    // milliseconds (cannot have both maxRetransmits and maxPacketLifeTime)
+    //    maxPacketLifeTime: 1500,    // milliseconds (cannot have both maxRetransmits and maxPacketLifeTime)
     maxRetransmits: 10,         // number of retransmits
     negotiated: true,           // channel negotiated "out of band", through the unique id
     id: 0                    // unique id for that channel, shared by both peers
@@ -23,7 +23,11 @@ export default class TelemedPeerConnection {
     private peerConnection: RTCPeerConnection;
     private _dataChannel: RTCDataChannel;
     private iceConfiguration: RTCConfiguration;
-    
+
+    private polite: boolean = true;
+    private makingOffer: boolean = false;
+    private isSettingRemoteAnswerPending: boolean = false;
+
     private _localStreams: { [device: string]: MediaStream } = {}
     private rtcRtpSenders: {
         [device: string]: {
@@ -37,7 +41,10 @@ export default class TelemedPeerConnection {
 
     // TODO: VERIFY THIS POINT: onDataChannelMessageCallback is required to avoid Typescript complaining about the callback not being set
     // It should be possible to set the callback after the constructor is called, and use a default callback if it is not set
-    constructor(iceConfiguration: RTCConfiguration, onDataChannelMessageCallback: (event: MessageEvent) => void) {
+    constructor(
+        iceConfiguration: RTCConfiguration,
+        onDataChannelMessageCallback: (event: MessageEvent) => void,
+        polite: boolean = true) {
         // Create the peerConnection
         console.debug("Creating TelemedPeerConnection");
         console.debug("iceConfiguration", iceConfiguration);
@@ -45,24 +52,26 @@ export default class TelemedPeerConnection {
         // Save the iceConfiguration for later use (e.g. when resetting the peer connection)
         this.iceConfiguration = iceConfiguration;
 
-        const {peerConnection, dataChannel} = this.setupPeerConnection(iceConfiguration, onDataChannelMessageCallback);
-        
+        const { peerConnection, dataChannel } = this.setupPeerConnection(iceConfiguration, onDataChannelMessageCallback);
+
         this.peerConnection = peerConnection;
         this._dataChannel = dataChannel;
+
+        this.polite = polite;
 
     }
 
     private setupPeerConnection(
-            iceConfiguration: RTCConfiguration, 
-            onDataChannelMessageCallback: (event: MessageEvent) => void
-        ) : {peerConnection: RTCPeerConnection, dataChannel: RTCDataChannel} {
+        iceConfiguration: RTCConfiguration,
+        onDataChannelMessageCallback: (event: MessageEvent) => void
+    ): { peerConnection: RTCPeerConnection, dataChannel: RTCDataChannel } {
 
         console.debug("Creating peerConnection");
         // Create the peerConnection
         let peerConnection = new RTCPeerConnection(iceConfiguration);
 
         console.debug("New peerConnection created. Setting up...");
-        
+
         // Register listeners for the peerConnection
         this.registerConsoleLogListeners(peerConnection);
         this.registerFunctionalListeners(peerConnection);
@@ -88,7 +97,7 @@ export default class TelemedPeerConnection {
 
         // Need to return both the peerConnection and the dataChannel
         // for the constructor to work...
-        return {peerConnection, dataChannel};
+        return { peerConnection, dataChannel };
     }
 
     // Handle the track event
@@ -97,13 +106,13 @@ export default class TelemedPeerConnection {
         console.debug("Track event transceiver", event.transceiver);
 
         const currentDefaultTransceiver = DEFAULT_TRANSCEIVERS[this.numReceivers];
-        
+
         // We add the new transceiver to its corresponding stream in remote streams
         this._remoteStreams[currentDefaultTransceiver.device].addTrack(event.transceiver.receiver.track);
 
         this.numReceivers++;
     }
-        
+
     // Expose streams
     get localStreams() {
         return this._localStreams;
@@ -128,10 +137,10 @@ export default class TelemedPeerConnection {
 
     // Data Channel Callbacks
     public onDataChannelMessageCallback
-    : (event: MessageEvent) => void
-    = (event: MessageEvent) => {
-        throw new Error("onDataChannelMessageCallback not set");
-    }
+        : (event: MessageEvent) => void
+        = (event: MessageEvent) => {
+            throw new Error("onDataChannelMessageCallback not set");
+        }
 
 
     // Generic callback to add an event listener to the peerConnection
@@ -219,8 +228,8 @@ export default class TelemedPeerConnection {
             this.onConnectionStateChangeCallback(event);
         });
         peerConnection.addEventListener("negotiationneeded", (event) => console.debug("Negotiation needed event"));
-        peerConnection.addEventListener("track", (event : RTCTrackEvent) => console.debug("Track event:", event.track));
-        peerConnection.addEventListener("datachannel", (event : RTCDataChannelEvent) => console.debug("Data channel received from remote peer", event.channel));
+        peerConnection.addEventListener("track", (event: RTCTrackEvent) => console.debug("Track event:", event.track));
+        peerConnection.addEventListener("datachannel", (event: RTCDataChannelEvent) => console.debug("Data channel received from remote peer", event.channel));
     }
 
     // Register functional listeners for the peerConnection events
@@ -276,14 +285,14 @@ export default class TelemedPeerConnection {
     public closeConnection() {
         console.debug("Closing TelemedPeerConnection");
         if (this.peerConnection) {
-          try {
-            this.peerConnection.close();
-            console.debug("PeerConnection closed successfully");
-          } catch (e) {
-            console.error("Error while closing PeerConnection", e);
-          }
+            try {
+                this.peerConnection.close();
+                console.debug("PeerConnection closed successfully");
+            } catch (e) {
+                console.error("Error while closing PeerConnection", e);
+            }
         }
-      }
+    }
 
     public replaceDeviceStream = (stream: MediaStream, device: keyof StreamsByDevice) => {
         if (!this.rtcRtpSenders[device]) {
@@ -298,52 +307,52 @@ export default class TelemedPeerConnection {
             const sender = this.rtcRtpSenders[device][track.kind];
             if (!sender) {
                 console.warn(`No RTCRtpSender found device "${device}", track "${track.label}" (${track.kind})`, track);
-            }else{
+            } else {
                 sender.replaceTrack(track);
             }
         }
     }
 
-    public setupStreamsAndTransceivers = (peerConnection: RTCPeerConnection ) => {
+    public setupStreamsAndTransceivers = (peerConnection: RTCPeerConnection) => {
         console.debug("Setting up fixed streams and transceivers");
-      
+
         // Ensure all peers use the same order of transceivers
         // This is critical to avoid SDP negotiation errors ("m-lines" mismatch)
         const orderedTransceivers: { device: keyof StreamsByDevice, kind: "audio" | "video" }[] = [
-          { device: "camera", kind: "audio" },
-          { device: "camera", kind: "video" },
-          { device: "instrument", kind: "video" },
-          { device: "screen", kind: "video" }
+            { device: "camera", kind: "audio" },
+            { device: "camera", kind: "video" },
+            { device: "instrument", kind: "video" },
+            { device: "screen", kind: "video" }
         ];
-      
+
         // Create placeholder MediaStreams for each device
         // These are used to group and identify tracks before real streams are attached
         for (const { device } of orderedTransceivers) {
-          if (!this._localStreams[device]) this._localStreams[device] = new MediaStream();
-          if (!this._remoteStreams[device]) this._remoteStreams[device] = new MediaStream();
+            if (!this._localStreams[device]) this._localStreams[device] = new MediaStream();
+            if (!this._remoteStreams[device]) this._remoteStreams[device] = new MediaStream();
         }
-      
+
         console.debug("TelemedPeerConnection: Placeholder MediaStreams created for each device");
         console.debug(this._localStreams, this._remoteStreams);
-      
+
         // Add one transceiver per track type, in a fixed and synchronized order
         // Each transceiver is bound to its corresponding placeholder stream
         for (const { device, kind } of orderedTransceivers) {
-          const rtcRtpTransceiver = peerConnection.addTransceiver(kind, {
-            direction: "sendrecv",
-            streams: [this._localStreams[device]]
-          });
-      
-          if (!rtcRtpTransceiver) {
-            console.error("Error creating transceiver", device, kind);
-            throw new Error("Error creating transceiver for device");
-          }
-      
-          // Store transceiver sender for future track replacement (e.g. replaceTrack)
-          if (!this.rtcRtpSenders[device]) this.rtcRtpSenders[device] = {};
-          this.rtcRtpSenders[device][kind] = rtcRtpTransceiver.sender;
+            const rtcRtpTransceiver = peerConnection.addTransceiver(kind, {
+                direction: "sendrecv",
+                streams: [this._localStreams[device]]
+            });
+
+            if (!rtcRtpTransceiver) {
+                console.error("Error creating transceiver", device, kind);
+                throw new Error("Error creating transceiver for device");
+            }
+
+            // Store transceiver sender for future track replacement (e.g. replaceTrack)
+            if (!this.rtcRtpSenders[device]) this.rtcRtpSenders[device] = {};
+            this.rtcRtpSenders[device][kind] = rtcRtpTransceiver.sender;
         }
-      
+
         console.debug("TelemedPeerConnection: Transceivers (senders) created in fixed order");
         console.debug(this.rtcRtpSenders);
     };
@@ -352,8 +361,28 @@ export default class TelemedPeerConnection {
     // This function will be called when we receives an answer
     public setRemoteDescription = async (description: RTCSessionDescription) => {
         console.debug("setRemoteDescription", description);
-        // Set the remote description
-        return this.peerConnection.setRemoteDescription(description);
+
+        const readyForOffer = !this.makingOffer && (this.peerConnection.signalingState === "stable" || this.isSettingRemoteAnswerPending);
+        const offerCollision = description.type === "offer" && !readyForOffer;
+        const ignoreOffer = !this.polite && offerCollision;
+
+        if (ignoreOffer) {
+            console.warn("Ignoring offer due to collision and not polite.");
+            return;
+        }
+
+        try {
+            if (description.type === "answer") {
+                this.isSettingRemoteAnswerPending = true;
+            }
+            await this.peerConnection.setRemoteDescription(description);
+        } catch (err) {
+            console.error("Error during setRemoteDescription", err);
+        } finally {
+            if (description.type === "answer") {
+                this.isSettingRemoteAnswerPending = false;
+            }
+        }
     }
 
     // Set local description
@@ -366,9 +395,9 @@ export default class TelemedPeerConnection {
 
     // DATA CHANNEL
 
-    private addDataChannelListener = (dataChannel : RTCDataChannel) => {
+    private addDataChannelListener = (dataChannel: RTCDataChannel) => {
         console.debug("Setting datachannel listeners");
-        
+
         // Register listeners for the data channel
         dataChannel.addEventListener('message', (event: MessageEvent) => {
             this.onDataChannelMessageCallback(event)
@@ -411,7 +440,7 @@ export default class TelemedPeerConnection {
         });
 
         this._dataChannel.send(data);
-        
+
         console.debug(`Message sent to other peer through data channel: ${data}`)
 
     }
